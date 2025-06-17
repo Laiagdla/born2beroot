@@ -18,12 +18,12 @@ preseed:
 
 memnet:
 	vboxmanage modifyvm $(MACHINENAME) --ioapic on
-	vboxmanage modifyvm $(MACHINENAME) --memory 1024 --vram 128
+	vboxmanage modifyvm $(MACHINENAME) --memory 1024
 	vboxmanage modifyvm $(MACHINENAME) --nic1 nat
 	vboxmanage modifyvm $(MACHINENAME) --natpf1 "ssh,tcp,,4242,,4242"
 
 disk:
-	vboxmanage createhd --filename $(DISK_PATH) --size 30000 --format VDI
+	vboxmanage createhd --filename $(DISK_PATH) --size 35000 --format VDI
 	vboxmanage storagectl $(MACHINENAME) --name "SATA Controller" --add sata --controller IntelAhci
 	vboxmanage storageattach $(MACHINENAME) --storagectl "SATA Controller" --port 0 --device 0 --type hdd --medium  $(DISK_PATH)
 
