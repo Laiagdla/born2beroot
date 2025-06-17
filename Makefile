@@ -45,10 +45,16 @@ start:
 startheadless:
 	vboxheadless --startvm $(MACHINENAME)
 
+stop:
+	vboxmanage controlvm $(MACHINENAME) poweroff
+
 check:
 	vboxmanage list vms
 
-remove:
+del_disk:
+	rm $(DISK_PATH)
+
+remove: del_disk
 	vboxmanage unregistervm $(MACHINENAME) --delete
 
-.PHONY: create memnet disk iso boot start startheadless check remove setup
+.PHONY: create memnet disk iso boot start startheadless check remove del_disk setup clipboard stop
