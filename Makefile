@@ -11,9 +11,10 @@ create: $(ISO_PATH)
 	vboxmanage createvm --name $(MACHINENAME) --ostype "Debian_64" --register --basefolder `pwd`
 
 preseed:
-	python -m http.server --bind 0.0.0.0
+	python3 -m http.server --bind 0.0.0.0
 	echo "url=http://192.168.122.1:8000/preseed.cfg"
 	echo "vmlinuz initrd=initrd.gz auto=true priority=critical url=http://192.168.122.1:8000/preseed.cfg --- quiet"
+	echo "https://tinyurl.com/preseedlaia"
 
 memnet:
 	vboxmanage modifyvm $(MACHINENAME) --ioapic on
@@ -30,10 +31,13 @@ iso:
 	vboxmanage storagectl $(MACHINENAME) --name "IDE Controller" --add ide --controller PIIX4
 	vboxmanage storageattach $(MACHINENAME) --storagectl "IDE Controller" --port 1 --device 0 --type dvddrive --medium $(ISO_PATH)
 
+clipboard:
+	VBoxManage modifyvm $(MACHINENAME) --clipboard-mode=bidirectional
+
 boot:
 	vboxmanage modifyvm $(MACHINENAME) --boot1 dvd --boot2 disk --boot3 none --boot4 none
 
-setup: memnet disk iso boot
+setup: memnet disk iso boot clipboard
 
 start:
 	vboxmanage startvm $(MACHINENAME)
