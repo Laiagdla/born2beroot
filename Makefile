@@ -57,4 +57,6 @@ del_disk:
 remove: del_disk
 	vboxmanage unregistervm $(MACHINENAME) --delete
 
-.PHONY: create memnet disk iso boot start startheadless check remove del_disk setup clipboard stop
+make re: stop remove create setup start
+
+.PHONY: create re memnet disk iso boot start startheadless check remove del_disk setup clipboard stop
