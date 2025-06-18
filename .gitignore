@@ -1,2 +1,3 @@
 *.iso
-debian_vm/
+debian_vm*
+devian_vm2
