@@ -23,7 +23,7 @@ memnet:
 	vboxmanage modifyvm $(MACHINENAME) --natpf1 "ssh,tcp,,4242,,4242"
 
 disk:
-	vboxmanage createhd --filename $(DISK_PATH) --size 35000 --format VDI
+	vboxmanage createhd --filename $(DISK_PATH) --size 30800 --format VDI
 	vboxmanage storagectl $(MACHINENAME) --name "SATA Controller" --add sata --controller IntelAhci
 	vboxmanage storageattach $(MACHINENAME) --storagectl "SATA Controller" --port 0 --device 0 --type hdd --medium  $(DISK_PATH)
 
