@@ -35,7 +35,6 @@ clipboard:
 	VBoxManage modifyvm $(MACHINENAME) --clipboard-mode=bidirectional
 
 boot:
-	vboxmanage modifyvm $(MACHINENAME) --efi on
 	vboxmanage modifyvm $(MACHINENAME) --boot1 disk --boot2 dvd --boot3 none --boot4 none
 
 setup: memnet disk iso boot clipboard
