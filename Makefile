@@ -1,20 +1,20 @@
-
 DEBIAN_URL	= https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-12.11.0-amd64-netinst.iso
-ISO_PATH	= $(HOME)/sgoinfre/debian.iso
 MACHINENAME	?= debian_vm
+ISO_PATH	= $(HOME)/sgoinfre/debian.iso
 DISK_PATH	= $(HOME)/sgoinfre/$(MACHINENAME)_disk.vdi
+PRESEED_PATH= $(HOME)/code/born2beroot/preseed.iso
+# "vmlinuz initrd=initrd.gz auto=true priority=critical url=http://192.168.122.1:8000/preseed.cfg --- quiet"
 
+#guest aditions, enabling clipboard
+/usr/share/virtualbox/VBoxGuestAdditions.iso:
+	wget -O /usr/share/virtualbox/VBoxGuestAdditions.iso https://download.virtualbox.org/virtualbox/7.1.10/VBoxGuestAdditions_7.1.10.iso
+
+# CREATE
 $(ISO_PATH):
 	wget $(DEBIAN_URL) -O $(ISO_PATH)
 
 create: $(ISO_PATH)
 	vboxmanage createvm --name $(MACHINENAME) --ostype "Debian_64" --register --basefolder `pwd`
-
-preseed:
-	python3 -m http.server --bind 0.0.0.0
-	echo "url=http://192.168.122.1:8000/preseed.cfg"
-	echo "vmlinuz initrd=initrd.gz auto=true priority=critical url=http://192.168.122.1:8000/preseed.cfg --- quiet"
-	echo "https://tinyurl.com/preseedlaia"
 
 memnet:
 	vboxmanage modifyvm $(MACHINENAME) --ioapic on
@@ -30,6 +30,7 @@ disk:
 iso:
 	vboxmanage storagectl $(MACHINENAME) --name "IDE Controller" --add ide --controller PIIX4
 	vboxmanage storageattach $(MACHINENAME) --storagectl "IDE Controller" --port 1 --device 0 --type dvddrive --medium $(ISO_PATH)
+	vboxmanage storageattach $(MACHINENAME) --storagectl "IDE Controller" --port 1 --device 1 --type dvddrive --medium $(PRESEED_PATH)
 
 clipboard:
 	VBoxManage modifyvm $(MACHINENAME) --clipboard-mode=bidirectional
@@ -39,6 +40,7 @@ boot:
 
 setup: memnet disk iso boot clipboard
 
+# CONTROL
 start:
 	vboxmanage startvm $(MACHINENAME)
 
@@ -48,9 +50,10 @@ startheadless:
 stop:
 	vboxmanage controlvm $(MACHINENAME) poweroff
 
-check:
+check: /usr/share/virtualbox/VBoxGuestAdditions.iso
 	vboxmanage list vms
 
+# REMOVE
 del_disk:
 	rm $(DISK_PATH)
 
