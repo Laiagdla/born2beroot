@@ -1,65 +1,95 @@
-DEBIAN_URL	= https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-12.11.0-amd64-netinst.iso
-MACHINENAME	?= debian_vm
-ISO_PATH	= $(HOME)/sgoinfre/debian.iso
-DISK_PATH	= $(HOME)/sgoinfre/$(MACHINENAME)_disk.vdi
-PRESEED_PATH= $(HOME)/code/born2beroot/preseed.iso
-# "vmlinuz initrd=initrd.gz auto=true priority=critical url=http://192.168.122.1:8000/preseed.cfg --- quiet"
+.PHONY: create re memnet disks start check clean del_disk setup stop
 
-#guest aditions, enabling clipboard
-/usr/share/virtualbox/VBoxGuestAdditions.iso:
-	wget -O /usr/share/virtualbox/VBoxGuestAdditions.iso https://download.virtualbox.org/virtualbox/7.1.10/VBoxGuestAdditions_7.1.10.iso
+DEBIAN_URL	:= https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-12.11.0-amd64-netinst.iso
+VMNAME		?= debian_vm
+ISO_PATH	:= $(HOME)/sgoinfre/debian.iso
+DISK_PATH	:= $(HOME)/sgoinfre/$(VMNAME)_disk.vdi
 
-# CREATE
+files: .env mandatory.sh preseed.cfg
+setup: create memnet disks
+
+####### Installation Variables
+LANGUAGE	:=$(shell echo ${LANG} | cut -d '_' -f 1)
+COUNTRY		:=$(shell echo ${LANG} | cut -d'_' -f2 | cut -d'.' -f1)
+TIME_ZONE	:=$(shell cat /etc/timezone)
+USER		:=$(shell who | awk '{print $$1}')
+HOSTNAME	:=$(SUB_USER)42
+KEYBOARD	:=$(shell localectl status | grep 'X11 Layout' | awk '{print $$3}')
+CRYPTO		=hello
+ROOTPASS	=hello
+PASS		=12345
+
+####### CREATE
 $(ISO_PATH):
 	wget $(DEBIAN_URL) -O $(ISO_PATH)
 
 create: $(ISO_PATH)
-	vboxmanage createvm --name $(MACHINENAME) --ostype "Debian_64" --register --basefolder `pwd`
+	vboxmanage createvm --name $(VMNAME) --ostype "Debian_64" --register --basefolder `pwd`
 
 memnet:
-	vboxmanage modifyvm $(MACHINENAME) --ioapic on
-	vboxmanage modifyvm $(MACHINENAME) --memory 1024
-	vboxmanage modifyvm $(MACHINENAME) --nic1 nat
-	vboxmanage modifyvm $(MACHINENAME) --natpf1 "ssh,tcp,,4242,,4242"
+	vboxmanage modifyvm $(VMNAME) --ioapic on
+	vboxmanage modifyvm $(VMNAME) --memory 1024
+	vboxmanage modifyvm $(VMNAME) --nic1 nat
+	vboxmanage modifyvm $(VMNAME) --natpf1 "ssh,tcp,,4242,,4242"
 
-disk:
+disks:
 	vboxmanage createhd --filename $(DISK_PATH) --size 30800 --format VDI
-	vboxmanage storagectl $(MACHINENAME) --name "SATA Controller" --add sata --controller IntelAhci
-	vboxmanage storageattach $(MACHINENAME) --storagectl "SATA Controller" --port 0 --device 0 --type hdd --medium  $(DISK_PATH)
+	vboxmanage storagectl $(VMNAME) --name "SATA Controller" --add sata --controller IntelAhci
+	vboxmanage storageattach $(VMNAME) --storagectl "SATA Controller" --port 0 --device 0 --type hdd --medium  $(DISK_PATH)
+	vboxmanage storagectl $(VMNAME) --name "IDE Controller" --add ide --controller PIIX4
+	vboxmanage storageattach $(VMNAME) --storagectl "IDE Controller" --port 1 --device 0 --type dvddrive --medium $(ISO_PATH)
+	vboxmanage modifyvm $(VMNAME) --boot1 disk --boot2 dvd --boot3 none --boot4 none
 
-iso:
-	vboxmanage storagectl $(MACHINENAME) --name "IDE Controller" --add ide --controller PIIX4
-	vboxmanage storageattach $(MACHINENAME) --storagectl "IDE Controller" --port 1 --device 0 --type dvddrive --medium $(ISO_PATH)
-	vboxmanage storageattach $(MACHINENAME) --storagectl "IDE Controller" --port 1 --device 1 --type dvddrive --medium $(PRESEED_PATH)
 
-clipboard:
-	VBoxManage modifyvm $(MACHINENAME) --clipboard-mode=bidirectional
-
-boot:
-	vboxmanage modifyvm $(MACHINENAME) --boot1 disk --boot2 dvd --boot3 none --boot4 none
-
-setup: memnet disk iso boot clipboard
-
-# CONTROL
+##### CONTROL
 start:
-	vboxmanage startvm $(MACHINENAME)
-
-startheadless:
-	vboxheadless --startvm $(MACHINENAME)
+	vboxmanage startvm $(VMNAME)
 
 stop:
-	vboxmanage controlvm $(MACHINENAME) poweroff
+	vboxmanage controlvm $(VMNAME) poweroff
 
-check: /usr/share/virtualbox/VBoxGuestAdditions.iso
+check:
 	vboxmanage list vms
 
-# REMOVE
+###### REMOVE
 del_disk:
 	rm $(DISK_PATH)
 
-remove: del_disk
-	vboxmanage unregistervm $(MACHINENAME) --delete
+clean: del_disk
+	vboxmanage unregistervm $(VMNAME) --delete
 
-make re: stop remove create setup start
+re: stop clean create setup start
 
-.PHONY: create re memnet disk iso boot start startheadless check remove del_disk setup clipboard stop
+###### FILES
+clean-files:
+	rm .env
+	rm mandatory.sh
+	rm preseed.cfg
+
+.env:
+	@echo 'Creating .env'
+	@echo LANGUAGE=$(LANGUAGE) >> .env
+	@echo COUNTRY=$(COUNTRY) >> .env
+	@echo TIME_ZONE=$(TIME_ZONE) >> .env
+	@echo USER=$(USER) >> .env
+	@echo HOSTNAME=$(HOSTNAME) >> .env
+	@echo KEYBOARD=$(KEYBOARD) >> .env
+
+mandatory.sh:
+	@echo 'Creating mandatory.sh'
+	@sed 's/$$USER/$(USER)/g' template.mandatory.sh > mandatory.sh
+	@chmod +x mandatory.sh
+
+preseed.cfg:
+	@echo 'Creating preseed.cfg'
+	@sed \
+		-e 's/$$LANGUAGE/$(LANGUAGE)/g' \
+		-e 's/$$COUNTRY/$(COUNTRY)/g' \
+		-e 's/$$LANG/${LANG}/g' \
+		-e 's/$$KEYBOARD/$(KEYBOARD)/g' \
+		-e 's/$$TIME_ZONE/$(TIME_ZONE)/g'
+		-e 's/$$CRYPTO/$(CRYPTO)/g' \
+		-e 's/$$ROOTPASS/$(ROOTPASS)/g' \
+		-e 's/$$USER/$(USER)/g' \
+		-e 's/$$PASS/$(PASS)/g' \
+		template.preseed.cfg > preseed.cfg
