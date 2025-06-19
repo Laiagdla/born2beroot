@@ -74,15 +74,6 @@ cleanfiles:
 	rm -f config/mandatory.sh
 	rm -f config/.env
 
-config/.env:
-	@echo 'Creating .env'
-	@echo LANGUAGE=$(LANGUAGE) >> .env
-	@echo COUNTRY=$(COUNTRY) >> .env
-	@echo TIME_ZONE=$(TIME_ZONE) >> .env
-	@echo USER=$(USER) >> .env
-	@echo HOSTNAME=$(HOSTNAME) >> .env
-	@echo KEYBOARD=$(KEYBOARD) >> .env
-
 config/preseed.cfg:
 	@echo '▸ Creating preseed.cfg'
 	@sed \
@@ -156,34 +147,49 @@ $(ISOMOD_PATH): $(ISO_PATH) $(TEMP_DIR) configfiles
 ####### VM SETUP #######
 # TODO
 addgroup:
-	sudo addgroup user42
+	ssh sudo addgroup user42
 
 # TODO
 appendsudoers:
+ssh
+echo "#includesdir /etc/sudoers.d" | sudo EDITOR='tee -a' visudo
 	scp
+ssh
+
 # TODO
 password:
-	sed -i 's/PASS_MAX_DAYS\\t99999/PASS_MAX_DAYS\\t30/' /etc/login.defs
+ssh
+	perl -pi -e 's/PASS_MAX_DAYS\t99999/PASS_MAX_DAYS\t30/g' /etc/login.defs
+perl -pi -e 's/PASS_MIN_DAYS\t0/PASS_MAX_DAYS\t2/g' /etc/login.defs
 	sed -i 's/PASS_MIN_DAYS\\t0/PASS_MIN_DAYS\\t2/' /etc/login.defs
 	chage --maxdays 30 --mindays 2 --warndays 7 $(USER)
 	chage --maxdays 30 --mindays 2 --warndays 7 root
-	sed -i 's/password\\t\\[success=1 default=ignore\\]\\tpam_unix.so obscure use_authtok try_first_pass yescrypt/password\\t\\[success=2 default=ignore\\]\\tpam_unix.so obscure sha512/' /etc/pam.d/common-password
-	sed -i 's/pam_pwquality.so retry=3/pam_pwquality.so retry=3 minlen=10 ucredit=-1 dcredit=-1 lcredit=-1 maxrepeat=3 usercheck=1 difok=7 enforce_for_root/' /etc/pam.d/common-password
+	sudo perl -pi -e 's/password\t\[success=1 default=ignore\]\tpam_unix.so obscure use_authtok try_first_pass yescrypt/password\t[success=2 default=ignore]\tpam_unix.so obscure sha512/' /etc/pam.d/common-password
+
+sudo perl -pi -e 's/pam_pwquality.so retry=3/pam_pwquality.so retry=3 minlen=10 ucredit=-1 dcredit=-1 lcredit=-1 maxrepeat=3 usercheck=1 difok=7 enforce_for_root/' /etc/pam.d/common-password
+
 
 # TODO
-copyfiles:
-	scp
+monitoring:
+	scp monitoring.sh
+ssh mv
+
 # TODO
 crontab:
-	echo -e \"\$(crontab -u root -l)*/10 * * * * bash /usr/local/bin/monitoring.sh\" | crontab -u root -
+ssh
+crontab -u root -l > /tmp/root_crontab
+echo "*/10 * * * * bash /usr/local/bin/monitoring.sh" >> /tmp/root_crontab
+crontab -u root /tmp/root_crontab
+rm /tmp/root_crontab
 	chmod 777 /usr/local/bin/monitoring.sh
 	service cron restart
+
 # TODO
 allow4242:
 	@echo "Allowing port 4242 on locahost..."
 	ssh $(USER)@locahost "sudo ufw allow 4242"
 	@echo "Verifying UFW status on locahost..."
-	ssh $(USER)@locahost "sudo ufw status | grep 4242"
+	ssh $(USER)@locahost "sudo ufw status"
 # TODO
 enable_ufw:
 	@echo "Enabling UFW on locahost..."
