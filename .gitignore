@@ -1,6 +1,6 @@
 *.iso
 debian_vm*
-devian_vm2
+devian_vm
 /devian_*
 *.png
 __pycache__

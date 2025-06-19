@@ -19,10 +19,11 @@ CRYPTO		= hello
 ROOTPASS	= hello
 PASS		= 12345
 
-all: create memnet disks start
-files: .env mandatory.sh preseed.cfg
 
-####### CREATE
+########## CREATE VM ###########
+
+all: create memnet disks start
+
 $(ISO_PATH):
 	wget $(DEBIAN_URL) -O $(ISO_PATH)
 
@@ -44,7 +45,7 @@ disks:
 	vboxmanage modifyvm $(VMNAME) --boot1 disk --boot2 dvd --boot3 none --boot4 none
 
 
-##### CONTROL
+########## CONTROL VM ###########
 start:
 	vboxmanage startvm $(VMNAME)
 
@@ -54,16 +55,17 @@ stop:
 check:
 	vboxmanage list vms
 
-###### REMOVE
+
+########## REMOVE VM ###########
 del_disk:
 	rm $(DISK_PATH)
 
-clean: del_disk
+remove: del_disk
 	vboxmanage unregistervm $(VMNAME) --delete
 
-re: stop clean create setup start
 
-###### FILES
+########## FILES ###########
+configfiles: config/preseed.cfg config/isolinux/txt.cfg config/isolinux.cfg config/isohdpfx.bin
 cleanfiles:
 	rm -f config/preseed.cfg
 	rm -f config/txt.cfg
@@ -123,18 +125,19 @@ config/isohdpfx.bin:
 	rm debian-binary
 	rm isolinux.deb
 
-configfiles: config/preseed.cfg config/isolinux/txt.cfg config/isolinux.cfg config/isohdpfx.bin
 
+########## ISO ###########
+build: $(TEMP_DIR) $(ISOMOD_PATH)
+cleanbuild:
+	rm -r $(TEMP_DIR)
+	rm $(ISOMOD_PATH)
 
-####### ISO
 $(TEMP_DIR):
 	mkdir $(TEMP_DIR)
 	@xorriso -indev "$(ISO_PATH)" -osirrox on -extract / "$(TEMP_DIR)"
 	chmod -R +w $(TEMP_DIR)
 
-config: $(TEMP_DIR)
-
-build: $(TEMP_DIR) configfiles
+$(ISOMOD_PATH): $(ISO_PATH) $(TEMP_DIR) configfiles
 	@xorriso -as mkisofs \
 		-o "$(ISOMOD_PATH)" \
 		-r -J \
