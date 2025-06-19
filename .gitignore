@@ -4,3 +4,4 @@ devian_vm
 /devian_*
 *.png
 __pycache__
+config/*

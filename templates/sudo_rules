@@ -1,5 +1,5 @@
 # Custom sudo rules for $USER
-User_Alias      MONITORING_USER = $USER
+User_Alias      MONITORING_USER = [USER]
 
 # Grant full sudo access to the target user
 $USER ALL=(ALL:ALL) ALL

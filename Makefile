@@ -83,11 +83,6 @@ config/.env:
 	@echo HOSTNAME=$(HOSTNAME) >> .env
 	@echo KEYBOARD=$(KEYBOARD) >> .env
 
-config/mandatory.sh:
-	@echo '▸ Creating mandatory.sh'
-	@sed 's/$$USER/$(USER)/g' template.mandatory.sh > mandatory.sh
-	@chmod +x mandatory.sh
-
 config/preseed.cfg:
 	@echo '▸ Creating preseed.cfg'
 	@sed \
@@ -100,19 +95,19 @@ config/preseed.cfg:
 		-e 's/\[ROOTPASS\]/$(ROOTPASS)/g' \
 		-e 's/\[USER\]/$(USER)/g' \
 		-e 's/\[PASS\]/$(PASS)/g' \
-		config/template.preseed.cfg > config/preseed.cfg
+		templates/preseed.cfg > config/preseed.cfg
 	@cp config/preseed.cfg $(TEMP_DIR)/preseed.cfg
 
 config/isolinux/txt.cfg:
 	@echo '▸ Creating txt.cfg'
 	@sed \
 		-e 's/\[HOSTNAME\]/$(HOSTNAME)/g' \
-		config/template.txt.cfg > config/txt.cfg
+		templates/txt.cfg > config/txt.cfg
 	@cp config/txt.cfg $(TEMP_DIR)/isolinux/txt.cfg
 
 config/isolinux.cfg:
 	@echo '▸ Copying isolinux.cfg'
-	@cp config/template.isolinux.cfg config/isolinux.cfg
+	@cp templates/isolinux.cfg config/isolinux.cfg
 	@cp config/isolinux.cfg $(TEMP_DIR)/isolinux/isolinux.cfg
 
 config/isohdpfx.bin:
@@ -125,6 +120,12 @@ config/isohdpfx.bin:
 	rm debian-binary
 	rm isolinux.deb
 
+# Vm config files
+config/sudo_rules.conf:
+	@echo '▸ Creating sudo_rules'
+	@sed \
+		-e 's/\[USER\]/$(USER)/g' \
+		templates/sudo_rules > config/sudo_rules.conf
 
 ########## ISO ###########
 build: $(TEMP_DIR) $(ISOMOD_PATH)
