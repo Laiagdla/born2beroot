@@ -67,6 +67,7 @@ re: stop clean create setup start
 cleanfiles:
 	rm -f config/preseed.cfg
 	rm -f config/txt.cfg
+	rm -f config/isolinux.cfg
 	rm -f config/isohdpfx.bin
 	rm -f config/mandatory.sh
 	rm -f config/.env
@@ -109,7 +110,8 @@ config/isolinux/txt.cfg:
 
 config/isolinux.cfg:
 	@echo '▸ Copying isolinux.cfg'
-	@cp template.isolinux.cfg $(TEMP_DIR)/isolinux/isolinux.cfg
+	@cp config/template.isolinux.cfg config/isolinux.cfg
+	@cp config/isolinux.cfg $(TEMP_DIR)/isolinux/isolinux.cfg
 
 config/isohdpfx.bin:
 	wget -O isolinux.deb  http://ftp.de.debian.org/debian/pool/main/s/syslinux/isolinux_6.04\~git20190206.bf6db5b4+dfsg1-3_all.deb
