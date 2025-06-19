@@ -5,8 +5,6 @@ VMNAME		?= debian_vm
 ISO_PATH	= $(HOME)/sgoinfre/debian.iso
 DISK_PATH	= $(HOME)/sgoinfre/$(VMNAME)_disk.vdi
 
-files: .env mandatory.sh preseed.cfg
-setup: create memnet disks
 
 ####### Installation Variables
 LANGUAGE	= $(shell echo ${LANG} | cut -d '_' -f 1)
@@ -18,6 +16,9 @@ KEYBOARD	= $(shell localectl status | grep 'X11 Layout' | awk '{print $$3}')
 CRYPTO		= hello
 ROOTPASS	= hello
 PASS		= 12345
+
+all: create memnet disks start
+files: .env mandatory.sh preseed.cfg
 
 ####### CREATE
 $(ISO_PATH):
