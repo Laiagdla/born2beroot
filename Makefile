@@ -151,3 +151,43 @@ $(ISOMOD_PATH): $(ISO_PATH) $(TEMP_DIR) configfiles
 		-c isolinux/boot.cat \
 		-b isolinux/isolinux.bin \
 		"$(TEMP_DIR)"
+
+
+####### VM SETUP #######
+# TODO
+addgroup:
+	sudo addgroup user42
+
+# TODO
+appendsudoers:
+	scp
+# TODO
+password:
+	sed -i 's/PASS_MAX_DAYS\\t99999/PASS_MAX_DAYS\\t30/' /etc/login.defs
+	sed -i 's/PASS_MIN_DAYS\\t0/PASS_MIN_DAYS\\t2/' /etc/login.defs
+	chage --maxdays 30 --mindays 2 --warndays 7 $(USER)
+	chage --maxdays 30 --mindays 2 --warndays 7 root
+	sed -i 's/password\\t\\[success=1 default=ignore\\]\\tpam_unix.so obscure use_authtok try_first_pass yescrypt/password\\t\\[success=2 default=ignore\\]\\tpam_unix.so obscure sha512/' /etc/pam.d/common-password
+	sed -i 's/pam_pwquality.so retry=3/pam_pwquality.so retry=3 minlen=10 ucredit=-1 dcredit=-1 lcredit=-1 maxrepeat=3 usercheck=1 difok=7 enforce_for_root/' /etc/pam.d/common-password
+
+# TODO
+copyfiles:
+	scp
+# TODO
+crontab:
+	echo -e \"\$(crontab -u root -l)*/10 * * * * bash /usr/local/bin/monitoring.sh\" | crontab -u root -
+	chmod 777 /usr/local/bin/monitoring.sh
+	service cron restart
+# TODO
+allow4242:
+	@echo "Allowing port 4242 on locahost..."
+	ssh $(USER)@locahost "sudo ufw allow 4242"
+	@echo "Verifying UFW status on locahost..."
+	ssh $(USER)@locahost "sudo ufw status | grep 4242"
+# TODO
+enable_ufw:
+	@echo "Enabling UFW on locahost..."
+	ssh $(USER)@locahost "sudo ufw enable"
+	@echo "UFW status on locahost:"
+	ssh $(USER)@locahost "sudo ufw status"
+# service ufw restart
