@@ -172,9 +172,12 @@ sudoers:
 move:
 	ssh -v -i ~/.ssh/vm_ed25519.pub -p $(SSH_HOST) $(USER)@localhost "sudo -S mv sudo_rules.conf /etc/sudoers.d"
 
+
+################ REWRITE TO SEND BASH SCRIPTS AND RUN THEM IN VM ################
 # NEXT:
 # TODO
 login:
+ssh -v -i ~/.ssh/vm_ed25519.pub -p $(SSH_HOST) $(USER)@localhost "sudo -S
 	perl -pi
 		-e 's/PASS_MAX_DAYS\t99999/PASS_MAX_DAYS\t30/g' \
 		-e 's/PASS_MIN_DAYS\t0/PASS_MIN_DAYS\t2/g' \
