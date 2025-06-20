@@ -18,6 +18,8 @@ KEYBOARD	= $(shell localectl status | grep 'X11 Layout' | awk '{print $$3}')
 CRYPTO		= hello
 ROOTPASS	= hello
 PASS		= 12345
+SSH_HOST	= 4242
+SSH_VM		= 4243
 
 
 ########## CREATE VM ###########
@@ -34,7 +36,7 @@ memnet:
 	vboxmanage modifyvm $(VMNAME) --ioapic on
 	vboxmanage modifyvm $(VMNAME) --memory 1024 --vram 128
 	vboxmanage modifyvm $(VMNAME) --nic1 nat
-	vboxmanage modifyvm $(VMNAME) --natpf1 "ssh,tcp,,4242,,4242"
+	vboxmanage modifyvm $(VMNAME) --natpf1 "ssh,tcp,,$(SSH_HOST),,22"
 
 disks:
 	vboxmanage createhd --filename $(DISK_PATH) --size 31540 --format VDI
@@ -145,6 +147,14 @@ $(ISOMOD_PATH): $(ISO_PATH) $(TEMP_DIR) configfiles
 
 
 ####### VM SETUP #######
+auth:
+	ssh-keygen -f ~/.ssh/vm_ed25519 -t ed25519
+	ssh lgrobe-d@localhost -p 4222
+# scp -v ~/.ssh/id_rsa.pub $(USER)@localhost:/Users/$(USER)/.ssh/
+
+scp:
+	scp -P $(SSH_HOST) $(USER)@localhost:/home/$(USER)/.ssh/ ~/.ssh/vm_ed25519
+
 # TODO
 addgroup:
 	ssh sudo addgroup user42
