@@ -153,16 +153,26 @@ $(ISOMOD_PATH): $(ISO_PATH) $(TEMP_DIR) configfiles
 
 
 ####### VM SETUP #######
-ssh-test:
-	ssh -p $(SSH_HOST) $(USER)@localhost
-
-ssh-copy:
+#DOING:
+ssh-set:
+	ssh-add ~/.ssh/vm_ed25519
+	ssh-keygen -f "/home/lgrobe-d/.ssh/known_hosts" -R "[localhost]:4243"
 	ssh-copy-id -p $(SSH_HOST) -i ~/.ssh/vm_ed25519 $(USER)@localhost
 
-sudoers:
-	scp -P $(SSH_HOST) config/sudo_rules.conf $(USER)@localhost:/home/$(USER)/sudo_rules
-# ssh -p $(SSH_HOST) $(USER)@localhost "echo "@includesdir /etc/sudoers.d" | sudo EDITOR='tee -a' visudo -f /etc/sudoers"
+ssh-config:
+	populate ~/.ssh/config
 
+ssh-test:
+	ssh -v -i ~/.ssh/vm_ed25519.pub -p $(SSH_HOST) $(USER)@localhost
+
+
+sudoers:
+	scp -P $(SSH_HOST) config/sudo_rules.conf $(USER)@localhost:/home/$(USER)/sudo_rules.conf
+# ssh -p $(SSH_HOST) $(USER)@localhost "echo "@includesdir /etc/sudoers.d" | sudo EDITOR='tee -a' visudo -f /etc/sudoers"
+move:
+	ssh -v -i ~/.ssh/vm_ed25519.pub -p $(SSH_HOST) $(USER)@localhost "sudo -S mv sudo_rules.conf /etc/sudoers.d"
+
+# NEXT:
 # TODO
 login:
 	perl -pi
