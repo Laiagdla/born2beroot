@@ -18,11 +18,14 @@ KEYBOARD	= $(shell localectl status | grep 'X11 Layout' | awk '{print $$3}')
 CRYPTO		= hello
 ROOTPASS	= hello
 PASS		= 12345
+SSH_VM		= 4242
+SSH_HOST	= 4243
 
 
 ########## CREATE VM ###########
 
 all: create memnet disks start
+fclean: cleanfiles cleanbuild remove
 
 $(ISO_PATH):
 	wget $(DEBIAN_URL) -O $(ISO_PATH)
@@ -34,10 +37,10 @@ memnet:
 	vboxmanage modifyvm $(VMNAME) --ioapic on
 	vboxmanage modifyvm $(VMNAME) --memory 1024 --vram 128
 	vboxmanage modifyvm $(VMNAME) --nic1 nat
-	vboxmanage modifyvm $(VMNAME) --natpf1 "ssh,tcp,,4242,,4242"
+	vboxmanage modifyvm $(VMNAME) --natpf1 "ssh,tcp,,$(SSH_HOST),,$(SSH_VM)"
 
 disks:
-	vboxmanage createhd --filename $(DISK_PATH) --size 31540 --format VDI
+	vboxmanage createhd --filename $(DISK_PATH) --size 31528 --format VDI
 	vboxmanage storagectl $(VMNAME) --name "SATA Controller" --add sata --controller IntelAhci
 	vboxmanage storageattach $(VMNAME) --storagectl "SATA Controller" --port 0 --device 0 --type hdd --medium  $(DISK_PATH)
 	vboxmanage storagectl $(VMNAME) --name "IDE Controller" --add ide --controller PIIX4
@@ -65,23 +68,15 @@ remove: del_disk
 
 
 ########## FILES ###########
-configfiles: config/preseed.cfg config/isolinux/txt.cfg config/isolinux.cfg config/isohdpfx.bin
+configfiles: config/preseed.cfg config/isolinux/txt.cfg config/isolinux.cfg config/isohdpfx.bin sshkey
 cleanfiles:
 	rm -f config/preseed.cfg
 	rm -f config/txt.cfg
 	rm -f config/isolinux.cfg
 	rm -f config/isohdpfx.bin
 	rm -f config/mandatory.sh
-	rm -f config/.env
-
-config/.env:
-	@echo 'Creating .env'
-	@echo LANGUAGE=$(LANGUAGE) >> .env
-	@echo COUNTRY=$(COUNTRY) >> .env
-	@echo TIME_ZONE=$(TIME_ZONE) >> .env
-	@echo USER=$(USER) >> .env
-	@echo HOSTNAME=$(HOSTNAME) >> .env
-	@echo KEYBOARD=$(KEYBOARD) >> .env
+	rm -f ~/.ssh/vm_ed25519.pub
+	rm -f ~/.ssh/vm_ed25519
 
 config/preseed.cfg:
 	@echo '▸ Creating preseed.cfg'
@@ -127,6 +122,10 @@ config/sudo_rules.conf:
 		-e 's/\[USER\]/$(USER)/g' \
 		templates/sudo_rules > config/sudo_rules.conf
 
+sshkey:
+	@ssh-keygen -f ~/.ssh/vm_ed25519 -t ed25519 -q -N ""
+	@cp ~/.ssh/vm_ed25519.pub $(TEMP_DIR)/vm_ed25519.pub
+
 ########## ISO ###########
 build: $(TEMP_DIR) $(ISOMOD_PATH)
 cleanbuild:
@@ -154,40 +153,67 @@ $(ISOMOD_PATH): $(ISO_PATH) $(TEMP_DIR) configfiles
 
 
 ####### VM SETUP #######
-# TODO
-addgroup:
-	sudo addgroup user42
+ssh-test:
+	ssh -p $(SSH_HOST) $(USER)@localhost
+
+ssh-copy:
+	ssh-copy-id -p $(SSH_HOST) -i ~/.ssh/vm_ed25519 $(USER)@localhost
+
+sudoers:
+	scp -P $(SSH_HOST) config/sudo_rules.conf $(USER)@localhost:/home/$(USER)/sudo_rules
+# ssh -p $(SSH_HOST) $(USER)@localhost "echo "@includesdir /etc/sudoers.d" | sudo EDITOR='tee -a' visudo -f /etc/sudoers"
 
 # TODO
-appendsudoers:
-	scp
-# TODO
-password:
-	sed -i 's/PASS_MAX_DAYS\\t99999/PASS_MAX_DAYS\\t30/' /etc/login.defs
-	sed -i 's/PASS_MIN_DAYS\\t0/PASS_MIN_DAYS\\t2/' /etc/login.defs
+login:
+	perl -pi
+		-e 's/PASS_MAX_DAYS\t99999/PASS_MAX_DAYS\t30/g' \
+		-e 's/PASS_MIN_DAYS\t0/PASS_MIN_DAYS\t2/g' \
+			/etc/login.defs
 	chage --maxdays 30 --mindays 2 --warndays 7 $(USER)
 	chage --maxdays 30 --mindays 2 --warndays 7 root
-	sed -i 's/password\\t\\[success=1 default=ignore\\]\\tpam_unix.so obscure use_authtok try_first_pass yescrypt/password\\t\\[success=2 default=ignore\\]\\tpam_unix.so obscure sha512/' /etc/pam.d/common-password
-	sed -i 's/pam_pwquality.so retry=3/pam_pwquality.so retry=3 minlen=10 ucredit=-1 dcredit=-1 lcredit=-1 maxrepeat=3 usercheck=1 difok=7 enforce_for_root/' /etc/pam.d/common-password
+
+pam:
+	passorig="password\t\[success=1 default=ignore\]\tpam_unix.so obscure use_authtok try_first_pass yescrypt"
+	passdest="password\t[success=2 default=ignore]\tpam_unix.so obscure sha512"
+	qaorig="pam_pwquality.so retry=3"
+	qadest="pam_pwquality.so retry=3 minlen=10 ucredit=-1 dcredit=-1 lcredit=-1 maxrepeat=3 usercheck=1 difok=7 enforce_for_root"
+	sudo perl -pi \
+		-e 's/$$ENV(passorig)/$$ENV(passdest)/' \
+		-e 's/$$ENV(qaorig)/$$ENV(qadest)/' \
+			/etc/pam.d/common-password
 
 # TODO
 copyfiles:
 	scp
+	chmod 777 /usr/local/bin/monitoring.sh
+
 # TODO
 crontab:
-	echo -e \"\$(crontab -u root -l)*/10 * * * * bash /usr/local/bin/monitoring.sh\" | crontab -u root -
-	chmod 777 /usr/local/bin/monitoring.sh
+	crontab -u root -l > /tmp/root_crontab
+	echo "*/10 * * * * bash /usr/local/bin/monitoring.sh" >> /tmp/root_crontab
+	crontab -u root /tmp/root_crontab
+	rm /tmp/root_crontab
 	service cron restart
+
 # TODO
 allow4242:
-	@echo "Allowing port 4242 on locahost..."
 	ssh $(USER)@locahost "sudo ufw allow 4242"
-	@echo "Verifying UFW status on locahost..."
 	ssh $(USER)@locahost "sudo ufw status | grep 4242"
 # TODO
 enable_ufw:
-	@echo "Enabling UFW on locahost..."
 	ssh $(USER)@locahost "sudo ufw enable"
-	@echo "UFW status on locahost:"
 	ssh $(USER)@locahost "sudo ufw status"
+
 # service ufw restart
+
+
+
+########## BONUS ####
+
+mysql:
+	mysql -u root <<EOF
+	SET PASSWORD FOR root@localhost = '${ROOT_PASSWORD}';
+	FLUSH PRIVILEGES;
+	EOF
+
+	mysql_secure_installation -u root --password="${ROOT_PASSWORD}" --use-default
