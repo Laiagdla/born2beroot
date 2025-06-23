@@ -24,7 +24,7 @@ SSH_HOST	= 4243
 
 ########## CREATE VM ###########
 
-all: create memnet disks start
+all: build create memnet disks start
 fclean: cleanfiles cleanbuild remove
 
 $(ISO_PATH):
@@ -52,6 +52,12 @@ disks:
 start:
 	vboxmanage startvm $(VMNAME)
 
+restart:
+	vboxmanage startvm $(VMNAME) --type headless
+	echo "$(CRYPTO)" > tmppass
+	vboxmanage controlvm $(VMNAME) addencpassword "identifier" ./tmppass
+	rm -f tmppass
+
 stop:
 	vboxmanage controlvm $(VMNAME) poweroff
 
@@ -68,14 +74,16 @@ remove: del_disk
 
 
 ########## FILES ###########
-configfiles: config/preseed.cfg config/isolinux/txt.cfg config/isolinux.cfg config/isohdpfx.bin sshkey
+CONFIGFILES	:=	config/preseed.cfg \
+				config/isolinux/txt.cfg \
+				config/isolinux.cfg \
+				config/isohdpfx.bin \
+				config/sudo_rules.conf \
+				config/monitoring.sh \
+				~/.ssh/vm_ed25519.pub
+
 cleanfiles:
-	rm -f config/preseed.cfg
-	rm -f config/txt.cfg
-	rm -f config/isolinux.cfg
-	rm -f config/isohdpfx.bin
-	rm -f config/mandatory.sh
-	rm -f ~/.ssh/vm_ed25519.pub
+	rm -f $(CONFIGFILES)
 	rm -f ~/.ssh/vm_ed25519
 
 config/preseed.cfg:
@@ -121,23 +129,29 @@ config/sudo_rules.conf:
 	@sed \
 		-e 's/\[USER\]/$(USER)/g' \
 		templates/sudo_rules > config/sudo_rules.conf
+	@cp config/sudo_rules.conf $(TEMP_DIR)/sudo_rules.conf
 
-sshkey:
+~/.ssh/vm_ed25519.pub:
 	@ssh-keygen -f ~/.ssh/vm_ed25519 -t ed25519 -q -N ""
 	@cp ~/.ssh/vm_ed25519.pub $(TEMP_DIR)/vm_ed25519.pub
 
+config/monitoring.sh:
+	@cp templates/monitoring.sh config/monitoring.sh
+	@cp config/monitoring.sh $(TEMP_DIR)/monitoring.sh
+
+
 ########## ISO ###########
-build: $(TEMP_DIR) $(ISOMOD_PATH)
+build: $(TEMP_DIR) $(CONFIGFILES) $(ISOMOD_PATH)
 cleanbuild:
-	rm -r $(TEMP_DIR)
-	rm $(ISOMOD_PATH)
+	rm -rf $(TEMP_DIR)
+	rm -f $(ISOMOD_PATH)
 
 $(TEMP_DIR):
 	mkdir $(TEMP_DIR)
 	@xorriso -indev "$(ISO_PATH)" -osirrox on -extract / "$(TEMP_DIR)"
 	chmod -R +w $(TEMP_DIR)
 
-$(ISOMOD_PATH): $(ISO_PATH) $(TEMP_DIR) configfiles
+$(ISOMOD_PATH): $(ISO_PATH)
 	@xorriso -as mkisofs \
 		-o "$(ISOMOD_PATH)" \
 		-r -J \
@@ -153,57 +167,32 @@ $(ISOMOD_PATH): $(ISO_PATH) $(TEMP_DIR) configfiles
 
 
 ####### VM SETUP #######
-#DOING:
 ssh-set:
-	ssh-add ~/.ssh/vm_ed25519
 	ssh-keygen -f "/home/lgrobe-d/.ssh/known_hosts" -R "[localhost]:4243"
-	ssh-copy-id -p $(SSH_HOST) -i ~/.ssh/vm_ed25519 $(USER)@localhost
+	ssh-add ~/.ssh/vm_ed25519
+	ssh -v -i ~/.ssh/vm_ed25519 -p $(SSH_HOST) $(USER)@localhost
 
-ssh-config:
-	populate ~/.ssh/config
+ssh:
+	ssh -v -i ~/.ssh/vm_ed25519 -p $(SSH_HOST) $(USER)@localhost
 
-ssh-test:
-	ssh -v -i ~/.ssh/vm_ed25519.pub -p $(SSH_HOST) $(USER)@localhost
-
-
-sudoers:
-	scp -P $(SSH_HOST) config/sudo_rules.conf $(USER)@localhost:/home/$(USER)/sudo_rules.conf
-# ssh -p $(SSH_HOST) $(USER)@localhost "echo "@includesdir /etc/sudoers.d" | sudo EDITOR='tee -a' visudo -f /etc/sudoers"
-move:
-	ssh -v -i ~/.ssh/vm_ed25519.pub -p $(SSH_HOST) $(USER)@localhost "sudo -S mv sudo_rules.conf /etc/sudoers.d"
+# ssh-copy-id -p $(SSH_HOST) -i ~/.ssh/vm_ed25519 $(USER)@localhost
 
 
-################ REWRITE TO SEND BASH SCRIPTS AND RUN THEM IN VM ################
-# NEXT:
-# TODO
+################33 MODIFIED sudo rules for allowing login.sh without password. RE BUILD EVERYTHING
+# RETRY:
 login:
-ssh -v -i ~/.ssh/vm_ed25519.pub -p $(SSH_HOST) $(USER)@localhost "sudo -S
-	perl -pi
-		-e 's/PASS_MAX_DAYS\t99999/PASS_MAX_DAYS\t30/g' \
-		-e 's/PASS_MIN_DAYS\t0/PASS_MIN_DAYS\t2/g' \
-			/etc/login.defs
-	chage --maxdays 30 --mindays 2 --warndays 7 $(USER)
-	chage --maxdays 30 --mindays 2 --warndays 7 root
+	scp -i ~/.ssh/vm_ed25519 -P $(SSH_HOST) templates/login.sh ${USER}@localhost:/home/${USER}/login.sh
+	ssh -t -v -i ~/.ssh/vm_ed25519 -p $(SSH_HOST) ${USER}@localhost "sudo /home/${USER}/login.sh"
 
 pam:
-	passorig="password\t\[success=1 default=ignore\]\tpam_unix.so obscure use_authtok try_first_pass yescrypt"
-	passdest="password\t[success=2 default=ignore]\tpam_unix.so obscure sha512"
-	qaorig="pam_pwquality.so retry=3"
-	qadest="pam_pwquality.so retry=3 minlen=10 ucredit=-1 dcredit=-1 lcredit=-1 maxrepeat=3 usercheck=1 difok=7 enforce_for_root"
-	sudo perl -pi \
-		-e 's/$$ENV(passorig)/$$ENV(passdest)/' \
-		-e 's/$$ENV(qaorig)/$$ENV(qadest)/' \
-			/etc/pam.d/common-password
+	scp -i ~/.ssh/vm_ed25519 -P $(SSH_HOST) templates/pam.sh ${USER}@localhost:/home/${USER}/pam.sh
+	ssh -t -v -i ~/.ssh/vm_ed25519 -p $(SSH_HOST) ${USER}@localhost "sudo /home/${USER}/login.sh"
 
-# TODO
-copyfiles:
-	scp
-	chmod 777 /usr/local/bin/monitoring.sh
 
 # TODO
 crontab:
 	crontab -u root -l > /tmp/root_crontab
-	echo "*/10 * * * * bash /usr/local/bin/monitoring.sh" >> /tmp/root_crontab
+	echo "*/10 * * * * bash /home/$(USER)/monitoring.sh" >> /tmp/root_crontab
 	crontab -u root /tmp/root_crontab
 	rm /tmp/root_crontab
 	service cron restart

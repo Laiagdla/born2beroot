@@ -2,7 +2,12 @@
 User_Alias      MONITORING_USER = [USER]
 
 # Grant full sudo access to the target user
-$USER ALL=(ALL:ALL) ALL
+[USER] ALL=(ALL:ALL) ALL
+[USER] ALL=(ALL) NOPASSWD: /path/to/login.sh
+[USER] ALL=(ALL) NOPASSWD: /path/to/pam.sh
+[USER] ALL=(ALL) NOPASSWD: /usr/bin/chage
+[USER] ALL=(ALL) NOPASSWD: /usr/sbin/ufw
+[USER] ALL=(ALL) NOPASSWD: /usr/bin/apt, /usr/bin/apt-get
 
 # Allow target user to run monitoring
 MONITORING_USER ALL=(ALL) NOPASSWD: /usr/local/bin/monitoring.sh

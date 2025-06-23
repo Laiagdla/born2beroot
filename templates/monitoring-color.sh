@@ -75,4 +75,4 @@ ${BLU}${kernel}\n  \
 $FLAG ${PUR} ${separator} ${distro}  $FLAG \n\
 ")
 
-echo "$output"
+wall -n "$output"
