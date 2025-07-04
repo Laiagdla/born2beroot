@@ -23,11 +23,11 @@ sudo=$(journalctl _COMM=sudo | grep COMMAND | wc -l)
 
 #WRAPPER
 distro=$(lsb_release -ds)
-separator=$(awk -v len="60" 'BEGIN { for (i=0; i<len; i++) printf "∙" }')
+separator=$(awk -v len="45" 'BEGIN { for (i=0; i<len; i++) printf "∙" }')
 
 # OUTPUT
 output=$(echo -e \
-"${separator} ${distro}\n\
+"${separator} ${distro} ∙∙∙∙\n\
 \t ▸ architecture \t \
 ${kernel}\n  \
 \t\t\t\t ${nodename}\n\
