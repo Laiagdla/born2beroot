@@ -52,6 +52,9 @@ fclean:
 evaluate:
 	vboxmanage clonevm $(VMNAME) --name $(VMNAME)eval --register --basefolder $(HOME)/sgoinfre/b2breval && vboxmanage startvm $(VMNAME)eval
 
+signature:
+	sha1sum $(DISK_PATH) | cut -d' ' -f1 > signature.txt
+
 ########## CONTROL VM ###########
 start:
 	vboxmanage startvm $(VMNAME)

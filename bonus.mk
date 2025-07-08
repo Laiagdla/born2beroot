@@ -1,11 +1,10 @@
 .DEFAULT_GOAL: bonus
 
-bonus: server wordpress mariadb server-restart navidrome music
+bonus: server php wordpress mariadb server-restart navidrome music
 
 server:
 	ssh -t $(VMNAME) "yes | sudo apt install lighttpd"
 	ssh -t $(VMNAME) "sudo ufw allow $(HTML_VM)"
-	ssh -t $(VMNAME) "sudo rm -rf /var/www/html"
 
 php:
 	ssh -t $(VMNAME) "yes | sudo apt install php-cgi php-mysql"
@@ -19,6 +18,7 @@ mariadb:
 		GRANT ALL PRIVILEGES ON wp_database.* TO '$(USER)'@'localhost'; FLUSH PRIVILEGES;\""
 
 wordpress:
+	ssh -t $(VMNAME) "sudo rm -rf /var/www/html"
 	ssh -t $(VMNAME) "wget https://wordpress.org/latest.zip"
 	ssh -t $(VMNAME) "sudo unzip latest.zip -d /var/www"
 	ssh -t $(VMNAME) "sudo mv /var/www/wordpress /var/www/html"
@@ -44,7 +44,7 @@ navidrome:
 	ssh -t $(VMNAME) "sudo chown -R navidrome:navidrome /var/opt/navidrome"
 	ssh -t $(VMNAME) "sudo chmod g+w /var/opt/navidrome/"
 	ssh -t $(VMNAME) "sudo usermod -aG navidrome $(USER)"
-	ssh -t $(VMNAME) "sudo sed -i 's|/opt/navidrome|/var/opt/navidrome|g' /etc/navidrome/navidrome.toml"
+	ssh -t $(VMNAME) "sudo sed -i 's|/opt/navidrome/music|/var/opt/navidrome|g' /etc/navidrome/navidrome.toml"
 	ssh -t $(VMNAME) "sudo systemctl enable --now navidrome"
 	ssh -t $(VMNAME) "sudo ufw allow $(NAVI_VM)"
 
@@ -61,6 +61,6 @@ music:
 	ssh -t $(VMNAME) "pipx install scdl"
 	ssh -t $(VMNAME) "pipx ensurepath && \
 		source ~/.zshrc && \
-		scdl -l https://soundcloud.com/inbeatwetrustofficialpage/sets/bboy-breakz -n 2 --path /var/opt/navidrome"
+		scdl -l https://soundcloud.com/projectlazy/broken-5 --path /var/opt/navidrome"
 	ssh -t $(VMNAME) "sudo chown -R navidrome:navidrome /var/opt/navidrome"
 	ssh -t $(VMNAME) "sudo chmod -R u=rwX,go=rX /var/opt/navidrome"
