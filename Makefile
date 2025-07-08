@@ -49,6 +49,9 @@ fclean:
 	$(MAKE) -f build.mk cleanbuild
 	$(MAKE) -f build.mk removevm
 
+evaluate:
+	vboxmanage clonevm $(VMNAME) --name $(VMNAME)eval --register --basefolder $(HOME)/sgoinfre/b2breval && vboxmanage startvm $(VMNAME)eval
+
 ########## CONTROL VM ###########
 start:
 	vboxmanage startvm $(VMNAME)
@@ -60,7 +63,7 @@ start-headless:
 	rm -f tmppass
 
 stop:
-	vboxmanage controlvm $(VMNAME) poweroff
+	vboxmanage controlvm $(VMNAME) savestate
 
 check:
 	vboxmanage list vms

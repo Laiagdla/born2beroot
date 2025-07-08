@@ -3,23 +3,43 @@ graphic-interface:
 
 ufw:
 	sudo ufw status
-	sudo service ufw status
+	sudo systemctl status ufw
+ssh:
+	systemctl is-active --quiet ufw && echo "ssh up" || echo "ssh down"
+	sudo cat /etc/ssh/ssh_config
 
-# sudo systemctl status ssh
+pam:
+	sudo cat /etc/pam.d/common-password
 
-# uname --kernel-version
+login:
+	sudo cat /etc/login.defs
 
-# getent group sudo user42
+sudoers:
+	sudo visudo -f /etc/sudoers.d/rules
 
-# sudo adduser name_user
-# sudo addgroup evaluating
-# sudo adduser name_user evaluating
+kernel:
+	uname --kernel-version
 
-# hostname
+groups:
+	getent group sudo user42
 
-# sudo nano /etc/hostname
-# sudo nano /etc/hosts
+sudo:
+	apt show sudo
 
-# sudo reboot
+cron:
+	sudo systemctl disable cron
+# sudo systemctl enable cron
 
-# lsblk
+user:
+	sudo adduser name_user
+	sudo addgroup evaluating
+	sudo adduser name_user evaluating
+
+hostnames:
+	hostname
+	sudo nano /etc/hostname
+	sudo nano /etc/hosts
+	sudo reboot
+
+partitions:
+	lsblk
