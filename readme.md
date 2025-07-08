@@ -16,6 +16,14 @@ It setups `ssh`, and perform the installation and configuration of bonus excersi
 
 bonus part, sets a working wordpress site, and a navidrome server
 
+## notes:
+
+### pressed lvm config:
+some exaplanations about how to set them up [link](https://secopsmonkey.com/custom-partioning-using-preseed.html)
+
+### lvm size:
+[source](https://askubuntu.com/questions/1340402/ubuntu-preseed-expert-recipe-priority-max-size-dont-translate-into-correct-resu)
+while lsblk display sizes in MiB preseed uses MB, sizes needs to be translated
 
 ### TODO:
 Passwords are set on the makefile.
