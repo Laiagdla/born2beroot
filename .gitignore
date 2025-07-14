@@ -5,3 +5,4 @@ devian_vm
 *.png
 __pycache__
 config/*
+signature*

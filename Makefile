@@ -49,11 +49,14 @@ fclean:
 	$(MAKE) -f build.mk cleanbuild
 	$(MAKE) -f build.mk removevm
 
-evaluate:
-	vboxmanage clonevm $(VMNAME) --name $(VMNAME)eval --register --basefolder $(HOME)/sgoinfre/b2breval && vboxmanage startvm $(VMNAME)eval
-
 signature:
 	sha1sum $(DISK_PATH) | cut -d' ' -f1 > signature.txt
+
+evalclone:
+	vboxmanage clonevm $(VMNAME) --name $(VMNAME)eval --register --basefolder $(HOME)/sgoinfre/b2breval && vboxmanage startvm $(VMNAME)eval
+
+eval:
+	$(MAKE) -f eval.mk
 
 ########## CONTROL VM ###########
 start:

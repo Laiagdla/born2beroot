@@ -1,12 +1,22 @@
-graphic-interface:
-	ls /usr/bin/*session
+all: interface ufw ssh
+
+interface:
+	@./title.sh "graphic interface"
+	ssh -t $(VMNAME) "ls /usr/bin/*session | wc -l"
+	ssh -t $(VMNAME) "dpkg -l | grep -E 'gnome|kde|xfce|mate|cinnamon|lxde' || echo 'no graphic interface'"
+	@./title.sh " --- end ---"
 
 ufw:
-	sudo ufw status
-	sudo systemctl status ufw
+	@./title.sh "firewall rules"
+	ssh -t $(VMNAME) "sudo ufw status"
+	ssh -t $(VMNAME) "sudo systemctl status ufw"
+	@./title.sh " --- end ---"
+
 ssh:
-	systemctl is-active --quiet ufw && echo "ssh up" || echo "ssh down"
-	sudo cat /etc/ssh/ssh_config
+	@./title.sh "testing ssh"
+	ssh -t $(VMNAME) "systemctl is-active --quiet ufw && echo 'ssh up' || echo 'ssh down'"
+	ssh -t $(VMNAME) "sudo cat /etc/ssh/ssh_config"
+	@./title.sh " --- end ---"
 
 pam:
 	sudo cat /etc/pam.d/common-password
