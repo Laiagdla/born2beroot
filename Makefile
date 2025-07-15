@@ -34,20 +34,20 @@ export SSH_VM HTML_VM NAVI_VM SSH_HOST HTML_HOST NAVI_HOST
 
 ########## MANAGE VM ###########
 build:
-	$(MAKE) -f build.mk
+	$(MAKE) -f makebuild.mk
 	@./title.sh "VM build finished, wait until debian is installed"
 	$(MAKE) start
 
 setup:
-	$(MAKE) -f setup.mk
+	$(MAKE) -f makesetup.mk
 
 bonus:
-	$(MAKE) -f bonus.mk
+	$(MAKE) -f makebonus.mk
 
 fclean: stop
-	$(MAKE) -f build.mk cleanfiles
-	$(MAKE) -f build.mk cleanbuild
-	$(MAKE) -f build.mk removevm
+	$(MAKE) -f makebuild.mk cleanfiles
+	$(MAKE) -f makebuild.mk cleanbuild
+	$(MAKE) -f makebuild.mk removevm
 
 signature:
 	sha1sum $(DISK_PATH) | cut -d' ' -f1 > signature.txt
@@ -56,7 +56,7 @@ evalclone:
 	vboxmanage clonevm $(VMNAME) --name $(VMNAME)eval --register --basefolder $(HOME)/sgoinfre/b2breval && vboxmanage startvm $(VMNAME)eval
 
 eval:
-	$(MAKE) -f eval.mk
+	$(MAKE) -f makeeval.mk
 
 ########## CONTROL VM ###########
 start:
@@ -78,4 +78,3 @@ check:
 
 ssh:
 	ssh -v $(VMNAME)
-
