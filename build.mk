@@ -24,8 +24,8 @@ cleanbuild:
 
 removevm:
 	@./title.sh "deleting VM"
-	rm $(DISK_PATH)
 	vboxmanage unregistervm $(VMNAME) --delete
+	rm $(DISK_PATH)
 
 ########## ISO ###########
 $(ISO_PATH):
@@ -80,22 +80,22 @@ $(ISOMOD_PATH): $(ISO_PATH)
 config/preseed.cfg:
 	@./title.sh "Creating preseed.cfg"
 	@sed \
-		-e 's/\[LANGUAGE\]/$(LANGUAGE)/g' \
-		-e 's/\[COUNTRY\]/$(COUNTRY)/g' \
-		-e 's/\[LANG\]/${LANG}/g' \
-		-e 's/\[KEYBOARD\]/$(KEYBOARD)/g' \
-		-e 's/\[TIME_ZONE\]/$(TIME_ZONE)/g' \
-		-e 's/\[CRYPTO\]/$(CRYPTO)/g' \
-		-e 's/\[ROOTPASS\]/$(ROOTPASS)/g' \
-		-e 's/\[USER\]/$(USER)/g' \
-		-e 's/\[PASS\]/$(PASS)/g' \
+		-e 's|<LANGUAGE>|$(LANGUAGE)|g' \
+		-e 's|<COUNTRY>|$(COUNTRY)|g' \
+		-e 's|<LANG>|${LANG}|g' \
+		-e 's|<KEYBOARD>|$(KEYBOARD)|g' \
+		-e 's|<TIME_ZONE>|$(TIME_ZONE)|g' \
+		-e 's|<CRYPTO>|$(CRYPTO)|g' \
+		-e 's|<ROOTPASS>|$(ROOTPASS)|g' \
+		-e 's|<USER>|$(USER)|g' \
+		-e 's|<PASS>|$(PASS)|g' \
 		templates/preseed.cfg > config/preseed.cfg
 	@cp config/preseed.cfg $(TEMP_DIR)/preseed.cfg
 
 config/txt.cfg:
 	@./title.sh "Creating txt.cfg"
 	@sed \
-		-e 's/\[HOSTNAME\]/$(HOSTNAME)/g' \
+		-e 's|<HOSTNAME>|$(HOSTNAME)|g' \
 		templates/txt.cfg > config/txt.cfg
 	@cp config/txt.cfg $(TEMP_DIR)/isolinux/txt.cfg
 
@@ -119,7 +119,7 @@ config/isohdpfx.bin:
 config/sudo_rules.conf:
 	@./title.sh "Creating sudo_rules"
 	@sed \
-		-e 's/\[USER\]/$(USER)/g' \
+		-e 's|<USER>|$(USER)|g' \
 		templates/sudo_rules > config/sudo_rules.conf
 	@cp config/sudo_rules.conf $(TEMP_DIR)/sudo_rules.conf
 

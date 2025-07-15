@@ -24,9 +24,9 @@ wordpress:
 	ssh -t $(VMNAME) "sudo mv /var/www/wordpress /var/www/html"
 	ssh -t $(VMNAME) "sudo cp /var/www/html/wp-config-sample.php /var/www/html/wp-config.php"
 	ssh -t $(VMNAME) "sudo sed -i \
-		-e 's/database_name_here/wp_database/g' \
-		-e 's/username_here/$(USER)/g' \
-		-e 's/password_here/$(PASS)/g' \
+		-e 's|database_name_here|wp_database|g' \
+		-e 's|username_here|$(USER)|g' \
+		-e 's|password_here|$(PASS)|g' \
 		/var/www/html/wp-config.php"
 
 server-restart:

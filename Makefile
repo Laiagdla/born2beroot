@@ -44,10 +44,10 @@ setup:
 bonus:
 	$(MAKE) -f bonus.mk
 
-fclean:
+fclean: stop
+	$(MAKE) -f build.mk removevm
 	$(MAKE) -f build.mk cleanfiles
 	$(MAKE) -f build.mk cleanbuild
-	$(MAKE) -f build.mk removevm
 
 signature:
 	sha1sum $(DISK_PATH) | cut -d' ' -f1 > signature.txt
@@ -65,11 +65,12 @@ start:
 start-headless:
 	vboxmanage startvm $(VMNAME) --type headless
 	echo "$(CRYPTO)" > tmppass
-	vboxmanage controlvm $(VMNAME) addencpassword "identifier" ./tmppass
+	vboxmanage controlvm $(VMNAME) addencpassword ./tmppass
 	rm -f tmppass
 
 stop:
-	vboxmanage controlvm $(VMNAME) savestate
+	sh -c 'STATE=$$(VBoxManage showvminfo "$(VMNAME)" | grep '\''^State:'\'' | awk '\''{print $$2}'\''); \
+	if [ "$$STATE" = "running" ]; then VBoxManage controlvm "$(VMNAME)" savestate; fi'
 
 check:
 	vboxmanage list vms

@@ -1,8 +1,8 @@
 # Custom sudo rules for $USER
-User_Alias      MONITORING_USER = [USER]
+User_Alias      MONITORING_USER = <USER>
 
 # Grant full sudo access to the target user
-[USER] ALL=(ALL:ALL) NOPASSWD: ALL
+<USER> ALL=(ALL:ALL) NOPASSWD: ALL
 # [USER] ALL=(ALL) NOPASSWD: /path/to/login.sh
 # [USER] ALL=(ALL) NOPASSWD: /path/to/login.sh
 # [USER] ALL=(ALL) NOPASSWD: /path/to/pam.sh
