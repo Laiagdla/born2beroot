@@ -1,8 +1,5 @@
 *.iso
-debian_vm*
-devian_vm
-/devian_*
-*.png
-__pycache__
+*_vm
 config/*
 signature*
+*.png
