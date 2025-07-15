@@ -2,9 +2,9 @@
 
 DEBIAN_URL	= https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-12.11.0-amd64-netinst.iso
 VMNAME		?= debian_vm
-ISO_PATH	= $(HOME)/sgoinfre/debian.iso
-ISOMOD_PATH	= $(HOME)/sgoinfre/debian_mod.iso
-TEMP_DIR	= $(HOME)/sgoinfre/debian_temp
+ISO_PATH	= $(HOME)/sgoinfre/debian12.iso
+ISOMOD_PATH	= $(HOME)/sgoinfre/$(VMNAME)_debian12_modded.iso
+TEMP_DIR	= $(HOME)/sgoinfre/$(VMNAME)_temp
 DISK_PATH	= $(HOME)/sgoinfre/$(VMNAME)_disk.vdi
 
 
@@ -71,9 +71,11 @@ start-headless:
 stop:
 	sh -c 'STATE=$$(VBoxManage showvminfo "$(VMNAME)" | grep '\''^State:'\'' | awk '\''{print $$2}'\''); \
 	if [ "$$STATE" = "running" ]; then VBoxManage controlvm "$(VMNAME)" savestate; fi'
+	sleep 2
 
 check:
 	vboxmanage list vms
 
 ssh:
 	ssh -v $(VMNAME)
+

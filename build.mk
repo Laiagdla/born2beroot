@@ -9,7 +9,7 @@ CONFIGFILES	:=	config/preseed.cfg \
 				~/.ssh/$(VMNAME)_ed25519.pub
 
 all: build create memnet disks
-build: $(TEMP_DIR) $(CONFIGFILES) $(ISOMOD_PATH)
+build: $(ISO_PATH) $(TEMP_DIR) $(CONFIGFILES) $(ISOMOD_PATH)
 
 ########## REMOVE VM ###########
 cleanfiles:
@@ -27,9 +27,6 @@ removevm:
 	vboxmanage unregistervm $(VMNAME) --delete
 
 ########## ISO ###########
-$(ISO_PATH):
-	wget $(DEBIAN_URL) -O $(ISO_PATH)
-
 create: $(ISOMOD_PATH)
 	@./title.sh "Registering VM"
 	vboxmanage createvm --name $(VMNAME) --ostype "Debian_64" --register --basefolder `pwd`
@@ -53,6 +50,9 @@ disks:
 	vboxmanage modifyvm $(VMNAME) --boot1 disk --boot2 dvd --boot3 none --boot4 none
 
 ########## ISO ###########
+$(ISO_PATH):
+	wget $(DEBIAN_URL) -O $(ISO_PATH)
+
 $(TEMP_DIR):
 	@./title.sh "Decompresing iso into temp folder"
 	mkdir $(TEMP_DIR)
