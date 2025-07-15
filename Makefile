@@ -45,9 +45,9 @@ bonus:
 	$(MAKE) -f bonus.mk
 
 fclean: stop
-	$(MAKE) -f build.mk removevm
 	$(MAKE) -f build.mk cleanfiles
 	$(MAKE) -f build.mk cleanbuild
+	$(MAKE) -f build.mk removevm
 
 signature:
 	sha1sum $(DISK_PATH) | cut -d' ' -f1 > signature.txt

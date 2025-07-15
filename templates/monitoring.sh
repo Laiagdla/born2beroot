@@ -49,4 +49,4 @@ ${kernel}\n  \
 ${separator} ${distro}\n\
 ")
 
-wall "$output"
+/usr/bin/wall "$output"

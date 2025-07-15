@@ -6,7 +6,7 @@ CONFIGFILES	:=	config/preseed.cfg \
 				config/isohdpfx.bin \
 				config/sudo_rules.conf \
 				config/monitoring.sh \
-				~/.ssh/vm_ed25519.pub
+				~/.ssh/$(VMNAME)_ed25519.pub
 
 all: build create memnet disks
 build: $(TEMP_DIR) $(CONFIGFILES) $(ISOMOD_PATH)
@@ -15,7 +15,7 @@ build: $(TEMP_DIR) $(CONFIGFILES) $(ISOMOD_PATH)
 cleanfiles:
 	@./title.sh "removing config files"
 	rm -f $(CONFIGFILES)
-	rm -f ~/.ssh/vm_ed25519
+	rm -f ~/.ssh/$(VMNAME)_ed25519
 
 cleanbuild:
 	@./title.sh "removing iso and temp files"
@@ -25,7 +25,6 @@ cleanbuild:
 removevm:
 	@./title.sh "deleting VM"
 	vboxmanage unregistervm $(VMNAME) --delete
-	rm $(DISK_PATH)
 
 ########## ISO ###########
 $(ISO_PATH):
@@ -89,6 +88,7 @@ config/preseed.cfg:
 		-e 's|<ROOTPASS>|$(ROOTPASS)|g' \
 		-e 's|<USER>|$(USER)|g' \
 		-e 's|<PASS>|$(PASS)|g' \
+		-e 's|<VMNAME>|$(VMNAME)|g' \
 		templates/preseed.cfg > config/preseed.cfg
 	@cp config/preseed.cfg $(TEMP_DIR)/preseed.cfg
 
@@ -123,10 +123,10 @@ config/sudo_rules.conf:
 		templates/sudo_rules > config/sudo_rules.conf
 	@cp config/sudo_rules.conf $(TEMP_DIR)/sudo_rules.conf
 
-~/.ssh/vm_ed25519.pub:
+~/.ssh/$(VMNAME)_ed25519.pub:
 	@./title.sh "Creating key pairs"
-	@ssh-keygen -f ~/.ssh/vm_ed25519 -t ed25519 -q -N ""
-	@cp ~/.ssh/vm_ed25519.pub $(TEMP_DIR)/vm_ed25519.pub
+	@ssh-keygen -f ~/.ssh/$(VMNAME)_ed25519 -t ed25519 -q -N ""
+	@cp ~/.ssh/$(VMNAME)_ed25519.pub $(TEMP_DIR)/$(VMNAME)_ed25519.pub
 
 config/monitoring.sh:
 	@./title.sh "Copying monitoring.sh"
