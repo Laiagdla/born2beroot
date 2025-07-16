@@ -3,3 +3,4 @@
 config/*
 signature*
 *.png
+.vscode
