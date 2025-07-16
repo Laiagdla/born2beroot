@@ -8,7 +8,7 @@ CONFIGFILES	:=	config/preseed.cfg \
 				config/monitoring.sh \
 				~/.ssh/$(VMNAME)_ed25519.pub
 
-all: build create memnet disks
+all: cleanfiles build create memnet disks
 build: $(ISO_PATH) $(TEMP_DIR) $(CONFIGFILES) $(ISOMOD_PATH)
 
 ########## REMOVE VM ###########
